@@ -1,0 +1,79 @@
+{
+  "seed": 20261114,
+  "start": "2026-05-18",
+  "weeks": 26,
+  "products": {
+    "SKU-1001": {
+      "name": "纯牛奶 1L",
+      "pack": 12,
+      "dc_moq_cases": 20,
+      "dc_mult_cases": 10
+    },
+    "SKU-2002": {
+      "name": "洗衣液 2kg",
+      "pack": 6,
+      "dc_moq_cases": 60,
+      "dc_mult_cases": 20
+    },
+    "SKU-3003": {
+      "name": "美式咖啡 250ml",
+      "pack": 24,
+      "dc_moq_cases": 20,
+      "dc_mult_cases": 10
+    }
+  },
+  "stores": [
+    "S01",
+    "S02",
+    "S03",
+    "S04",
+    "S05",
+    "S06"
+  ],
+  "dcs": {
+    "DC-N": [
+      "S01",
+      "S02",
+      "S03"
+    ],
+    "DC-S": [
+      "S04",
+      "S05",
+      "S06"
+    ]
+  },
+  "delays": [
+    {
+      "dc": "DC-N",
+      "sku": "SKU-1001",
+      "promised_week": 12,
+      "delay_days": 7
+    },
+    {
+      "dc": "DC-N",
+      "sku": "SKU-2002",
+      "promised_week": 21,
+      "delay_days": 7
+    },
+    {
+      "dc": "DC-S",
+      "sku": "SKU-1001",
+      "promised_week": 6,
+      "delay_days": 7
+    },
+    {
+      "dc": "DC-S",
+      "sku": "SKU-3003",
+      "promised_week": 18,
+      "delay_days": 7
+    }
+  ],
+  "return_events": [
+    {
+      "date": "2026-09-02",
+      "store": "S02",
+      "sku": "SKU-2002",
+      "qty": 60
+    }
+  ]
+}

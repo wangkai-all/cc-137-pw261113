@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>需求波动向上游传递观察台</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="viz-root">
+
+  <header class="page-head">
+    <div>
+      <h1>需求波动向上游传递观察台</h1>
+      <p class="sub">门店销量 · 配送中心订货 · 供应商交付，同一周粒度对齐。样本含批量订货、促销与延迟交付。</p>
+    </div>
+    <div class="head-right">
+      <span class="badge badge-sample">本地样本数据</span>
+      <button id="theme-toggle" class="btn-ghost" type="button" aria-label="切换深浅色">深色模式</button>
+    </div>
+  </header>
+
+  <!-- 筛选行：一行，作用于下方所有内容 -->
+  <div class="filter-row" role="group" aria-label="筛选">
+    <label>商品
+      <select id="f-sku"></select>
+    </label>
+    <label>网络范围
+      <select id="f-scope"></select>
+    </label>
+    <label>波动指标
+      <select id="f-metric">
+        <option value="var">方差比 Var(上游)/Var(下游)</option>
+        <option value="cv2">变异系数平方比 CV²(上游)/CV²(下游)</option>
+      </select>
+    </label>
+    <label>周期
+      <select id="f-range">
+        <option value="all">全部 26 周</option>
+        <option value="first13">前 13 周 (W01–W13)</option>
+        <option value="last13">后 13 周 (W14–W26)</option>
+        <option value="recent8">最近 8 周 (W19–W26)</option>
+      </select>
+    </label>
+    <span class="filter-sep" aria-hidden="true"></span>
+    <span class="filter-scenario-label">情景回放</span>
+    <label>订货频率
+      <select id="f-R">
+        <option value="1">每 1 周</option>
+        <option value="2" selected>每 2 周</option>
+        <option value="4">每 4 周</option>
+      </select>
+    </label>
+    <label>补货提前期
+      <select id="f-L">
+        <option value="1">1 周</option>
+        <option value="2" selected>2 周</option>
+        <option value="3">3 周</option>
+      </select>
+    </label>
+  </div>
+
+  <!-- KPI 行 -->
+  <section class="kpi-row" id="kpi-row" aria-label="关键指标"></section>
+
+  <!-- 主图：四层流量同周对齐 -->
+  <figure class="card" id="card-main">
+    <figcaption class="card-head">
+      <div>
+        <h2>四层流量同周对齐 <span class="badge badge-obs">观察事实</span></h2>
+        <p class="card-sub" id="main-sub"></p>
+      </div>
+      <button class="btn-ghost table-toggle" type="button" data-target="main">表格视图</button>
+    </figcaption>
+    <div class="chart-wrap" id="chart-main"></div>
+    <div class="table-wrap hidden" id="table-main"></div>
+  </figure>
+
+  <!-- 分层卡片 -->
+  <section class="echelon-grid" id="echelon-grid" aria-label="分层视图"></section>
+
+  <!-- 情景回放 -->
+  <figure class="card" id="card-scenario">
+    <figcaption class="card-head">
+      <div>
+        <h2>历史回放：不同订货频率 × 补货提前期 <span class="badge badge-sim">模拟输出</span></h2>
+        <p class="card-sub">以观察到的门店周需求为输入，模拟配送中心补货策略。回放参数只影响本区情景，不改写上方任何原始数据。</p>
+      </div>
+      <button class="btn-ghost table-toggle" type="button" data-target="scenario">表格视图</button>
+    </figcaption>
+    <div class="scenario-grid">
+      <div>
+        <h3 class="mini-title">模拟波动比热力图（行=订货频率，列=提前期）</h3>
+        <div id="heatmap"></div>
+        <p class="note" id="heatmap-note"></p>
+      </div>
+      <div>
+        <h3 class="mini-title" id="scenario-title"></h3>
+        <div class="chart-wrap" id="chart-scenario"></div>
+        <div class="kpi-row kpi-row-sim" id="sim-kpis"></div>
+      </div>
+    </div>
+    <div class="table-wrap hidden" id="table-scenario"></div>
+  </figure>
+
+  <!-- 口径说明 -->
+  <section class="card notes" aria-label="口径说明">
+    <h2>口径与读法</h2>
+    <ul>
+      <li><strong>同一时间粒度与单位：</strong>全部层级按周（周一~周日）对齐，单位统一为件；门店与 DC 订货以箱记录，已按箱规换算。周订货不与日销量直接比较。</li>
+      <li><strong>门店合并：</strong>网络/DC 范围为下属门店之和；任一门店某周缺货损失占需求 ≥2% 时，该周记为<span class="ink-critical">缺货截断周</span>（0~2% 记为轻微缺货，保留但标记）。</li>
+      <li><strong>缺货不计完整需求：</strong>缺货截断周的销量是被库存截断的结果，不代表完整需求，计算波动指标时成对剔除，并在图中以红色底纹标出。</li>
+      <li><strong>退货单独处理：</strong>退货不冲减需求与订货，单独列示。</li>
+      <li><strong>不可比较而非无穷大：</strong>分母方差为零、任一序列均值接近零（&lt;1 件/周）、或可比周期不足 10 周时，指标显示“不可比较”及原因，不参与排名。</li>
+      <li><strong>观察事实 vs 模拟输出：</strong>主图与分层卡片为样本观察值；情景回放区为模拟结果，两者分开标注。回放只读取观察需求，不改原始数据。</li>
+      <li><strong>读法提醒：</strong>波动放大是系统现象，可能来自批量订货、促销、提前期或缺货截断等多种因素，不能仅凭放大就断言某一层操作有错。</li>
+    </ul>
+  </section>
+
+  <!-- 指标钻取弹窗 -->
+  <div class="modal-backdrop hidden" id="modal-backdrop">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal-head">
+        <h2 id="modal-title"></h2>
+        <button class="btn-ghost" id="modal-close" type="button">关闭</button>
+      </div>
+      <div id="modal-body"></div>
+    </div>
+  </div>
+
+  <div class="tooltip hidden" id="tooltip" role="status"></div>
+</div>
+<script src="data/dataset.js"></script>
+<script type="module" src="app.js"></script>
+</body>
+</html>
